@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html ng-app="demo">
+<head>
+    <meta charset="UTF-8">
+    <title>泡茶機</title>
+
+    <!-- Add JQuery + Bootstrap JS / CSS + AngularJS-->
+
+    <script src="./vendor/jquery/jquery.js"></script>
+    <script src="./vendor/bootstrap/js/bootstrap.js"></script>
+    <link rel="stylesheet" type="text/css" href="./vendor/bootstrap/css/bootstrap.css">
+    <link type="text/css" rel="stylesheet"
+          href="https://d396qusza40orc.cloudfront.net/startup%2Fcode%2Fbootstrap-2.3.2.css">
+    <script src="./vendor/angular/angular.min.js"></script>
+    <!-- Our Script -->
+    <script src="./main.js"></script>
+    <script src="tea-parameters.js"></script>
+
+    <style type="text/css">
+        body {
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .container{
+            width: 980px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        .temp, .time{
+            border: 1px dotted;
+            padding: 10px 0px 10px 0px;
+        }
+        .minute, .second{
+        }
+        div.row {
+        }
+    </style>
+    <script type="text/javascript">
+        var makeBarcode = false;
+        function updateDisplay(val, id) {
+            document.getElementById(id).innerHTML = val;
+            updateBarcode();
+        }
+
+        function updateScaleY() {
+            document.getElementById("scaleY").value = document.getElementById("scaleX").value;
+        }
+
+        function updateBarcode() {
+            /*
+                     (1) temperature-barcode:
+                     temperature-barcode = temperature - 70 °C (bottom temperature degree)
+                     and put as 30-digit calculation by "0123456789ABCDEFGHIGKLMNOPQRSTU (VWXYZ) "
+                     Ex:
+                     70 °C : "0"
+                     80 C : "A"
+                     100 °C : "U"
+                     (2) time-barcode:
+                     transfer "mm:ss" (minute:second) into total second value by "mm x 60 + ss = total second"
+                     and put as 36-digit number calculation by "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                     Ex:
+                     1:20 = 80s  = "28"
+                     2:32 = 152s = "48"
+                     3:58 = 238s = "6M"
+                     */
+
+            const temperatureDigitStr = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const bottomTemperature = 70;
+            var tempResult = [];
+            tempResult.push( temperatureDigitStr.charAt( parseInt(document.getElementById("newItemTempRange1").value) - bottomTemperature ) );
+            tempResult.push( temperatureDigitStr.charAt( parseInt(document.getElementById("newItemTempRange2").value) - bottomTemperature ) );
+            tempResult.push( temperatureDigitStr.charAt( parseInt(document.getElementById("newItemTempRange3").value) - bottomTemperature ) );
+            tempResult.push( temperatureDigitStr.charAt( parseInt(document.getElementById("newItemTempRange4").value) - bottomTemperature ) );
+            tempResult.push( temperatureDigitStr.charAt( parseInt(document.getElementById("newItemTempRange5").value) - bottomTemperature ) );
+            tempResult.push( temperatureDigitStr.charAt( parseInt(document.getElementById("newItemTempRange6").value) - bottomTemperature ) );
+
+            const timeDigitStr = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            var timeSecond = [0, 0, 0, 0, 0, 0, 0 ];
+            var timeResult = ["", "", "", "", "", ""];
+
+            timeSecond[0] = parseInt(document.getElementById("newItemMinuteRange1").value) * 60 +
+                            parseInt(document.getElementById("newItemSecondRange1").value);
+            timeResult[0] = timeDigitStr.charAt( timeSecond[0] / 36 ) + timeDigitStr.charAt ( timeSecond[0] % 36 );
+
+            timeSecond[1] = parseInt(document.getElementById("newItemMinuteRange2").value) * 60 +
+                            parseInt(document.getElementById("newItemSecondRange2").value);
+            timeResult[1] = timeDigitStr.charAt( timeSecond[1] / 36 ) + timeDigitStr.charAt ( timeSecond[1] % 36 );
+
+            timeSecond[2] = parseInt(document.getElementById("newItemMinuteRange3").value) * 60 +
+                            parseInt(document.getElementById("newItemSecondRange3").value);
+            timeResult[2] = timeDigitStr.charAt( timeSecond[2] / 36 ) + timeDigitStr.charAt ( timeSecond[2] % 36 );
+
+            timeSecond[3] = parseInt(document.getElementById("newItemMinuteRange4").value) * 60 +
+                            parseInt(document.getElementById("newItemSecondRange4").value);
+            timeResult[3] = timeDigitStr.charAt( timeSecond[3] / 36 ) + timeDigitStr.charAt ( timeSecond[3] % 36 );
+
+            timeSecond[4] = parseInt(document.getElementById("newItemMinuteRange5").value) * 60 +
+                            parseInt(document.getElementById("newItemSecondRange5").value);
+            timeResult[4] = timeDigitStr.charAt( timeSecond[4] / 36 ) + timeDigitStr.charAt ( timeSecond[4] % 36 );
+
+            timeSecond[5] = parseInt(document.getElementById("newItemMinuteRange6").value) * 60 +
+                            parseInt(document.getElementById("newItemSecondRange6").value);
+            timeResult[5] = timeDigitStr.charAt( timeSecond[5] / 36 ) + timeDigitStr.charAt ( timeSecond[5] % 36 );
+
+            var barcodeResult = tempResult[0] + timeResult[0] +
+                                                            tempResult[1] + timeResult[1] +
+                                                            tempResult[2] + timeResult[2] +
+                                                            tempResult[3] + timeResult[3] +
+                                                            tempResult[4] + timeResult[4] +
+                                                            tempResult[5] + timeResult[5];
+            document.getElementById("symtext").value = barcodeResult;
+            document.getElementById("symtext").innerHTML = barcodeResult;
+            makeBarcode = true;
+        }
+
+        function setTeaParameter(tea){
+            for(var i=0; i<teaParameter.length ;i++){
+                if(teaParameter[i].name == tea){
+                    document.getElementById("newItemTempRange1").value = teaParameter[i].temp[0];
+                    document.getElementById("newItemMinuteRange1").value = teaParameter[i].minute[0];
+                    document.getElementById("newItemSecondRange1").value = teaParameter[i].second[0];
+
+                    document.getElementById("newItemTempRange2").value = teaParameter[i].temp[1];
+                    document.getElementById("newItemMinuteRange2").value = teaParameter[i].minute[1];
+                    document.getElementById("newItemSecondRange2").value = teaParameter[i].second[1];
+
+                    document.getElementById("newItemTempRange3").value = teaParameter[i].temp[2];
+                    document.getElementById("newItemMinuteRange3").value = teaParameter[i].minute[2];
+                    document.getElementById("newItemSecondRange3").value = teaParameter[i].second[2];
+
+                    document.getElementById("newItemTempRange4").value = teaParameter[i].temp[3];
+                    document.getElementById("newItemMinuteRange4").value = teaParameter[i].minute[3];
+                    document.getElementById("newItemSecondRange4").value = teaParameter[i].second[3];
+
+                    document.getElementById("newItemTempRange5").value = teaParameter[i].temp[4];
+                    document.getElementById("newItemMinuteRange5").value = teaParameter[i].minute[4];
+                    document.getElementById("newItemSecondRange5").value = teaParameter[i].second[4];
+
+                    document.getElementById("newItemTempRange6").value = teaParameter[i].temp[5];
+                    document.getElementById("newItemMinuteRange6").value = teaParameter[i].minute[5];
+                    document.getElementById("newItemSecondRange6").value = teaParameter[i].second[5];
+
+                    document.getElementById("tempDisplay1").innerHTML = teaParameter[i].temp[0];
+                    document.getElementById("minuteDisplay1").innerHTML = teaParameter[i].minute[0];
+                    document.getElementById("secondDisplay1").innerHTML = teaParameter[i].second[0];
+
+                    document.getElementById("tempDisplay2").innerHTML = teaParameter[i].temp[1];
+                    document.getElementById("minuteDisplay2").innerHTML = teaParameter[i].minute[1];
+                    document.getElementById("secondDisplay2").innerHTML = teaParameter[i].second[1];
+
+                    document.getElementById("tempDisplay3").innerHTML = teaParameter[i].temp[2];
+                    document.getElementById("minuteDisplay3").innerHTML = teaParameter[i].minute[2];
+                    document.getElementById("secondDisplay3").innerHTML = teaParameter[i].second[2];
+
+                    document.getElementById("tempDisplay4").innerHTML = teaParameter[i].temp[3];
+                    document.getElementById("minuteDisplay4").innerHTML = teaParameter[i].minute[3];
+                    document.getElementById("secondDisplay4").innerHTML = teaParameter[i].second[3];
+
+                    document.getElementById("tempDisplay5").innerHTML = teaParameter[i].temp[4];
+                    document.getElementById("minuteDisplay5").innerHTML = teaParameter[i].minute[4];
+                    document.getElementById("secondDisplay5").innerHTML = teaParameter[i].second[4];
+
+                    document.getElementById("tempDisplay6").innerHTML = teaParameter[i].temp[5];
+                    document.getElementById("minuteDisplay6").innerHTML = teaParameter[i].minute[5];
+                    document.getElementById("secondDisplay6").innerHTML = teaParameter[i].second[5];
+
+                    updateBarcode();
+
+                    /* Debug alert:
+                            alert("name: "+ teaParameter[i].name +
+                          '\n' + teaParameter[i].temp[0] + ' /' + teaParameter[i].minute[0] + ' /' + teaParameter[i].second[0] +
+                          '\n' + teaParameter[i].temp[1] + ' /' + teaParameter[i].minute[1] + ' /' + teaParameter[i].second[1] +
+                          '\n' + teaParameter[i].temp[2] + ' /' + teaParameter[i].minute[2] + ' /' + teaParameter[i].second[2] +
+                          '\n' + teaParameter[i].temp[3] + ' /' + teaParameter[i].minute[3] + ' /' + teaParameter[i].second[3] +
+                          '\n' + teaParameter[i].temp[4] + ' /' + teaParameter[i].minute[4] + ' /' + teaParameter[i].second[4] +
+                          '\n' + teaParameter[i].temp[5] + ' /' + teaParameter[i].minute[5] + ' /' + teaParameter[i].second[5]
+                                    );
+                            */
+                }
+            }
+        }
+
+        // http://thenewcode.com/864/Auto-Generate-Marks-on-HTML5-Range-Sliders-with-JavaScript
+        function ticks(element) {
+            if (element.hasOwnProperty('list') && element.hasOwnProperty('min') && element.hasOwnProperty('max') &&    element.hasOwnProperty('step')) {
+                var datalist = document.createElement('datalist'),
+                        minimum = parseInt(element.getAttribute('min')),
+                        step = parseInt(element.getAttribute('step')),
+                        maximum = parseInt(element.getAttribute('max'));
+                datalist.id = element.getAttribute('list');
+                for (var i = minimum; i < maximum+step; i = i + step) {
+                    datalist.innerHTML +="<option value="+i+"></option>";
+                }
+                element.parentNode.insertBefore(datalist, element.nextSibling);
+            }}
+        var lists = document.querySelectorAll("input[type=range][list]"),
+                arr = Array.prototype.slice.call(lists);
+        arr.forEach(ticks);
+    </script>
+
+
+<!--digest from demo.html-->
+    <!--link rel="stylesheet" type="text/css" href="lib/demo.css"-->
+    <!--link rel="stylesheet" type="text/css" href="lib/jquery-ui.min.css"-->
+    <!--script type="text/javascript" src="lib/jquery.js"></script-->
+    <!--script type="text/javascript" src="lib/jquery-ui.min.js"></script-->
+    <script type="text/javascript" src="lib/fonts.js"></script>
+    <script type="text/javascript" src="lib/filedrop-min.js"></script>
+    <script type="text/javascript">
+        var Module = {
+            // memoryInitializerPrefixURL:'your-path-here/',
+            preRun:[ function() {
+                Module.FS_createPreloadedFile("/", "Inconsolata.otf",
+                        "Inconsolata.otf", true, false);
+            } ],
+            postRun:[ function() {
+                var load_font = Module.cwrap("load_font", 'number',
+                        ['string','string','number']);
+                load_font("Inconsolata.otf", "INCONSOLATA", 108);
+
+                // Load any previously saved fonts
+                for (var i = 0; i < 8; i++) {
+                    if (!localStorage.getItem('bwipjsFontName' + i))
+                        continue;
+
+                    var fontname = localStorage.getItem('bwipjsFontName' + i);
+                    var filename = localStorage.getItem('bwipjsFileName' + i);
+                    var sizemult = localStorage.getItem('bwipjsSizeMult' + i);
+                    var fontfile = atob(localStorage.getItem('bwipjsFontFile' + i));
+                    try {
+                        fontLoad(fontname, filename, sizemult, fontfile);
+                        fontShow(fontname, filename, sizemult);
+                    } catch (e) {
+                        alert('Error: ' + fontname + ': ' + filename + ': ' + e);
+
+                        localStorage.removeItem('bwipjsFontName' + i);
+                        localStorage.removeItem('bwipjsFileName' + i);
+                        localStorage.removeItem('bwipjsSizeMult' + i);
+                        localStorage.removeItem('bwipjsFontFile' + i);
+                    }
+                }
+            } ]
+        };
+    </script>
+    <script type="text/javascript" src="freetype.js"></script>
+    <script type="text/javascript" src="bwip.js"></script>
+    <script type="text/javascript" src="./lib/canvas.js"></script>
+    <script type="text/javascript" src="./lib/symdesc.js"></script>
+    <script type="text/javascript" src="./lib/canvas-toblob.js"></script>
+    <script type="text/javascript" src="./lib/filesaver.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var lastSymbol;
+            try {
+                lastSymbol = localStorage.getItem('bwipjsLastSymbol');
+            } catch (e) {
+            }
+
+            var $sel = $('#symbol')
+                    .change(function(ev) {
+                        var desc = symdesc[$(this).val()];
+                        if (desc) {
+                            $('#symtext').val(desc.text);
+                            $('#symopts').val(desc.opts);
+
+                            $('#proof-img').css('visibility', 'hidden');
+
+                            try {
+                                localStorage.setItem('bwipjsLastSymbol', desc.sym);
+                            } catch (e) {
+                            }
+                        } else {
+                            $('#symtext').val('');
+                            $('#symopts').val('');
+                        }
+                        $('#symaltx').val('');
+                        $('.saveas').css('visibility', 'hidden');
+                    });
+
+            if (lastSymbol)
+                $sel.val(lastSymbol);
+            else
+                $sel.prop('selectedIndex', 0);
+            $sel.trigger('change');
+
+            $('#scaleX').spinner({ min:1 })
+                    .on("spinstop", function(ev) {
+                        $('#scaleY').val(this.value);
+                    });
+            $('#scaleY').spinner({ min:1 });
+            $('#render').button().click(render);
+            $('#fonthdr').click(fontClick);
+            $('#addfont').button().click(fontRead);
+            $('.saveas').css('visibility', 'hidden');
+
+            if (location.search.indexOf('proofs=1') != -1) {
+                // Show the images from BWIPP with Ghostscript
+                var img = document.createElement('img');
+                img.id					= 'proof-img';
+                img.style.visibility 	= 'hidden';
+                img.style.position		= 'absolute';
+                img.style.top			= '0px';
+                img.style.left			= '0px';
+                $('#proof').append(img);
+            }
+
+            // File picker
+            var zone = new FileDrop('dropzone');
+            zone.event('send', function (files) {
+                var file = files.first();
+                $('#dropzone div.droptext').css('display', 'none');
+                $('#dropzone div.dropfile').css('display', 'block').text(file.name);
+                $('#dropzone input.fd-file')[0].title = file.name;
+
+                fontSelected(file.nativeFile);		// Native browser File object
+            });
+
+            // Allow Enter to render
+            $('#params').keypress(function(ev) {
+                if (ev.which == 13) {
+                    render();
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        function render() {
+            //extra added by Ted
+            if (!makeBarcode) return;
+
+            var elt  = symdesc[$('#symbol').val()];
+            var text = $('#symtext').val().replace(/^\s+/,'').replace(/\s+$/,'');
+            var altx = $('#symaltx').val().replace(/^\s+/,'').replace(/\s+$/,'');
+            var opts = $('#symopts').val().replace(/^\s+/,'').replace(/\s+$/,'');
+
+            var bw = new BWIPJS;
+
+            $('#proof-img').css('visibility', 'hidden');
+            $('.saveas').css('visibility', 'hidden');
+
+            // Convert the options to a dictionary object, so we can pass alttext with
+            // spaces.
+            var tmp = opts.split(' ');
+            opts = {};
+            for (var i = 0; i < tmp.length; i++) {
+                if (!tmp[i])
+                    continue;
+                var eq = tmp[i].indexOf('=');
+                if (eq == -1)
+                    opts[tmp[i]] = bw.value(true);
+                else
+                    opts[tmp[i].substr(0, eq)] = bw.value(tmp[i].substr(eq+1));
+            }
+
+            // Add the alternate text
+            if (altx)
+                opts.alttext = bw.value(altx);
+
+            var rot  = 'N';
+            var rots = [ 'rotL', 'rotR', 'rotI' ];
+            for (var i = 0; i < rots.length; i++) {
+                if (document.getElementById(rots[i]).checked) {
+                    rot = rots[i].charAt(3);
+                    break;
+                }
+            }
+
+            // Anti-aliased or monochrome fonts?
+            // This hooks directly into the FreeType library.
+            BWIPJS.ft_monochrome(document.getElementById('fontAnti').checked ? 0 : 1);
+
+            // Feature or bug, BWIPP does not extend the background color into the
+            // human readable text.  Fix that in the bitmap interface.
+            if (opts.backgroundcolor) {
+                bw.bitmap(new Bitmap('#' + opts.backgroundcolor));
+                delete opts.backgroundcolor;
+            } else {
+                bw.bitmap(new Bitmap);
+            }
+
+            var scaleX = +document.getElementById('scaleX').value || 2;
+            var scaleY = +document.getElementById('scaleY').value || 2;
+            bw.scale(scaleX, scaleY);
+
+            var div = document.getElementById('output');
+            if (div)
+                div.innerHTML = '';
+
+            bw.push(text);
+            bw.push(opts);
+
+            bw.call(elt.sym, function(e) {
+                if (e) {
+                    if (typeof e === 'string') {
+                        alert(e);
+                    } else if (e.stack) {
+                        alert(e.message + '\r\n' + e.stack);
+                    } else {
+                        var s = '';
+                        if (e.fileName)
+                            s += e.fileName + ' ';
+                        if (e.lineNumber)
+                            s += '[line ' + e.lineNumber + '] ';
+                        alert(s + (s ? ': ' : '') + e.message);
+                    }
+                } else {
+                    bw.bitmap().show('canvas', rot);
+
+                    $('.saveas').css('visibility', 'visible');
+                    saveCanvas.basename = elt.sym + '-' +
+                            text.replace(/[^a-zA-Z0-9._]+/g, '-');
+
+                    if (location.search.indexOf('proofs=1') != -1) {
+                        var img = document.getElementById('proof-img');
+                        if (img) {
+                            img.src = 'proofs/' + elt.sym + '.png';
+                            img.style.visibility = 'visible';
+                        }
+                    }
+                }
+            });
+        }
+        function saveCanvas(type, ext) {
+            var canvas = document.getElementById('canvas');
+            canvas.toBlob(function (blob) {
+                saveAs(blob, saveCanvas.basename + ext);
+            }, type, 1);
+        }
+    </script>
+
+
+</head>
+<div ng-controller="MainController">
+
+<!--自動 / 手動 選項-->
+    <div class="container">
+        <div class="row">
+            <button class="span2 btn btn-primary" ng-show="isAuto()" ng-click="switchAuto()">自動設定</button>
+            <button class="span2 btn btn-default" ng-show="isAuto()" ng-click="switchAuto()">手動設定</button>
+            <button class="span2 btn btn-default" ng-show="!isAuto()" ng-click="switchAuto()">自動設定</button>
+            <button class="span2 btn btn-primary" ng-show="!isAuto()" ng-click="switchAuto()">手動設定</button>
+        </div>
+    </div>
+
+
+<!-- New HTML -->
+<div class="container" ng-show="isAuto()">
+    <div class="row">
+        <div class="form-group">
+            <!--H4 align="middle">自動設定</H4-->
+            <table>
+                <tr>
+                <th>
+
+                </th>
+                <th>
+                        <div class="dropdown" style="margin:1px">
+                            <button class="span2 btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">綠茶</button>
+                            <ul class="dropdown-menu">
+                                <li><a href="" onclick='setTeaParameter("green1")'>龍井</a></li>
+                                <li><a href="" onclick='setTeaParameter("green2")'>香片</a></li>
+                                <li><a href="" onclick='setTeaParameter("green3")'>蘇州碧螺春</a></li>
+                                <li><a href="" onclick='setTeaParameter("green4")'>三峽碧螺春</a></li>
+                                <li><a href="" onclick='setTeaParameter("green5")'>牡丹繡球</a></li>
+                            </ul>
+                        </div>
+                </th>
+                <th>
+                        <div class="dropdown" style="margin:1px">
+                            <button class="span2 btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">烏龍茶</button>
+                            <ul class="dropdown-menu">
+                            <li><a href="" onclick='setTeaParameter("oolong1")'>金萱</a></li>
+                            <li><a href="" onclick='setTeaParameter("oolong2")'>桂花金萱</a></li>
+                            <li><a href="" onclick='setTeaParameter("oolong3")'>高山茶(清香)</a></li>
+                            <li><a href="" onclick='setTeaParameter("oolong4")'>高山茶(培火)</a></li>
+                            <li><a href="" onclick='setTeaParameter("oolong5")'>包種(清茶)</a></li>
+                             </ul>
+                        </div>
+                </th>
+                <th>
+                    <div class="dropdown" style="margin:1px">
+                        <button class="span2 btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">紅茶</button>
+                        <ul class="dropdown-menu">
+                            <li><a href="" onclick='setTeaParameter("black1")'>紅玉</a></li>
+                            <li><a href="" onclick='setTeaParameter("black2")'>柚香</a></li>
+                            <li><a href="" onclick='setTeaParameter("black3")'>金毫特紅</a></li>
+                            <li><a href="" onclick='setTeaParameter("black4")'>功夫紅茶</a></li>
+                        </ul>
+                    </div>
+                </th>
+                <th>
+                    <div class="dropdown" style="margin:1px">
+                        <button class="span2 btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">普洱</button>
+                        <ul class="dropdown-menu">
+                            <li><a href="" onclick='setTeaParameter("puer1")'>渥堆細散普</a></li>
+                            <li><a href="" onclick='setTeaParameter("puer2")'>大葉散普</a></li>
+                        </ul>
+                    </div>
+                </th>
+                </tr>
+            </table>
+         </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="form-group">
+            <!--H4 align="middle">手動設定</H4-->
+            <form role="form" action="./index.html">
+                <H4><b>第一泡好茶</b></H4>
+                    <div class="row temp">
+                        <div class="span12">
+                        <label for="newItemTempRange1">溫度(°C):</label>
+                        <span id="tempDisplay1"><b>100</b></span>
+                        <input type="range" id="newItemTempRange1" ng-model="vm.newItemTemperature1" min="70" max="100" step="1"  onchange='updateDisplay(this.value,"tempDisplay1")'
+                               list="tempList1" ng-disabled="isAuto()"  />
+                        <datalist id="tempList1">
+                            <option>70</option>
+                            <option>75</option>
+                            <option>80</option>
+                            <option>85</option>
+                            <option>90</option>
+                            <option>95</option>
+                            <option>100</option>
+                        </datalist>
+                        </div>
+                    </div>
+                    <div class="row time">
+                        <div class="span12">
+                            時間:
+                        </div>
+                        <div class="span3 minute">
+                            <label for="newItemMinuteRange1">分鐘:</label>
+                            <span id="minuteDisplay1"><b>3</b></span>
+                            <input type="range" id="newItemMinuteRange1" ng-model="vm.newItemMinute1" min="0" max="5" step="1"  onchange='updateDisplay(this.value,"minuteDisplay1")'
+                                   list="minuteList1" ng-disabled="isAuto()" />
+                            <datalist id="minuteList1">
+                                <option>0</option>
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </datalist>
+                        </div>
+                        <div class="span9 second">
+                            <label for="newItemSecondRange1">秒:</label>
+                            <span id="secondDisplay1"><b>0</b></span>
+                            <input type="range" id="newItemSecondRange1" ng-model="vm.newItemSecond1" min="0" max="59" step="1"  onchange='updateDisplay(this.value,"secondDisplay1")'
+                                   list="secondList1" ng-disabled="isAuto()" />
+                            <datalist id="secondList1">
+                                <option>0</option>
+                                <option>10</option>
+                                <option>20</option>
+                                <option>30</option>
+                                <option>40</option>
+                                <option>50</option>
+                            <option>59</option>
+                            </datalist>
+                        </div>
+                    </div>
+
+                <H4><b>第二泡好茶</b></H4>
+                <div class="row temp">
+                    <div class="span12">
+                    <label for="newItemTempRange2">溫度(°C):</label>
+                    <span id="tempDisplay2"><b>100</b></span>
+                    <input type="range" id="newItemTempRange2" ng-model="vm.newItemTemperature2" min="70" max="100" step="1"  onchange='updateDisplay(this.value,"tempDisplay2")'
+                           list="tempList2" ng-disabled="isAuto()" />
+                    <datalist id="tempList2">
+                        <option>70</option>
+                        <option>75</option>
+                        <option>80</option>
+                        <option>85</option>
+                        <option>90</option>
+                        <option>95</option>
+                        <option>100</option>
+                    </datalist>
+                    </div>
+                </div>
+                <div class="row time">
+                    <div class="span12">
+                        時間:
+                    </div>
+                    <div class="span3 minute">
+                        <label for="newItemMinuteRange2">分鐘:</label>
+                        <span id="minuteDisplay2"><b>3</b></span>
+                        <input type="range" id="newItemMinuteRange2" ng-model="vm.newItemMinute2" min="0" max="5" step="1"  onchange='updateDisplay(this.value,"minuteDisplay2")'
+                               list="minuteList2" ng-disabled="isAuto()"  />
+                        <datalist id="minuteList2">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                        </datalist>
+                    </div>
+                    <div class="span9 second">
+                        <label for="newItemSecondRange2">秒:</label>
+                        <span id="secondDisplay2"><b>0</b></span>
+                        <input type="range" id="newItemSecondRange2" ng-model="vm.newItemSecond2" min="0" max="59" step="1"  onchange='updateDisplay(this.value,"secondDisplay2")'
+                               list="secondList2" ng-disabled="isAuto()" />
+                        <datalist id="secondList2">
+                            <option>0</option>
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                            <option>40</option>
+                            <option>50</option>
+                            <option>59</option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <H4><b>第三泡好茶</b></H4>
+                <div class="row temp">
+                    <div class="span12">
+                    <label for="newItemTempRange3">溫度(°C):</label>
+                        <span id="tempDisplay3"><b>100</b></span>
+                        <input type="range" id="newItemTempRange3" ng-model="vm.newItemTemperature3" min="70" max="100" step="1"  onchange='updateDisplay(this.value,"tempDisplay3")'
+                               list="tempList3" ng-disabled="isAuto()" />
+                        <datalist id="tempList3">
+                            <option>70</option>
+                            <option>75</option>
+                            <option>80</option>
+                            <option>85</option>
+                            <option>90</option>
+                            <option>95</option>
+                            <option>100</option>
+                        </datalist>
+                    </div>
+                </div>
+                <div class="row time">
+                    <div class="span12">
+                        時間:
+                    </div>
+                    <div class="span3 minute">
+                        <label for="newItemMinuteRange3">分鐘:</label>
+                        <span id="minuteDisplay3"><b>3</b></span>
+                        <input type="range" id="newItemMinuteRange3" ng-model="vm.newItemMinute3" min="0" max="5" step="1"  onchange='updateDisplay(this.value,"minuteDisplay3")'
+                               list="minuteList3" ng-disabled="isAuto()" />
+                        <datalist id="minuteList3">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                        </datalist>
+                    </div>
+                    <div class="span9 second">
+                        <label for="newItemSecondRange3">秒:</label>
+                        <span id="secondDisplay3"><b>0</b></span>
+                        <input type="range" id="newItemSecondRange3" ng-model="vm.newItemSecond3" min="0" max="59" step="1"  onchange='updateDisplay(this.value,"secondDisplay3")'
+                               list="secondList3" ng-disabled="isAuto()" />
+                        <datalist id="secondList3">
+                            <option>0</option>
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                            <option>40</option>
+                            <option>50</option>
+                            <option>59</option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <H4><b>第四泡好茶</b></H4>
+                <div class="row temp">
+                    <div class="span12">
+                    <label for="newItemTempRange4">溫度(°C):</label>
+                    <span id="tempDisplay4"><b>100</b></span>
+                    <input type="range" id="newItemTempRange4" ng-model="vm.newItemTemperature4" min="70" max="100" step="1"  onchange='updateDisplay(this.value,"tempDisplay4")'
+                           list="tempList4" ng-disabled="isAuto()" />
+                    <datalist id="tempList4">
+                        <option>70</option>
+                        <option>75</option>
+                        <option>80</option>
+                        <option>85</option>
+                        <option>90</option>
+                        <option>95</option>
+                        <option>100</option>
+                    </datalist>
+                    </div>
+                </div>
+                <div class="row time">
+                    <div class="span12">
+                        時間:
+                    </div>
+                    <div class="span3 minute">
+                        <label for="newItemMinuteRange4">分鐘:</label>
+                        <span id="minuteDisplay4"><b>3</b></span>
+                        <input type="range" id="newItemMinuteRange4" ng-model="vm.newItemMinute4" min="0" max="5" step="1"  onchange='updateDisplay(this.value,"minuteDisplay4")'
+                               list="minuteList4" ng-disabled="isAuto()" />
+                        <datalist id="minuteList4">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                        </datalist>
+                    </div>
+                    <div class="span9 second">
+                        <label for="newItemSecondRange4">秒:</label>
+                        <span id="secondDisplay4"><b>0</b></span>
+                        <input type="range" id="newItemSecondRange4" ng-model="vm.newItemSecond4" min="0" max="59" step="1"  onchange='updateDisplay(this.value,"secondDisplay4")'
+                               list="secondList4" ng-disabled="isAuto()" />
+                        <datalist id="secondList4">
+                            <option>0</option>
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                             <option>40</option>
+                             <option>50</option>
+                             <option>59</option>
+                        </datalist>
+                     </div>
+                </div>
+
+                <H4><b>第五泡好茶</b></H4>
+                <div class="row temp">
+                    <div class="span12">
+                    <label for="newItemTempRange5">溫度(°C):</label>
+                        <span id="tempDisplay5"><b>100</b></span>
+                        <input type="range" id="newItemTempRange5" ng-model="vm.newItemTemperature5" min="70" max="100" step="1"  onchange='updateDisplay(this.value,"tempDisplay5")'
+                               list="tempList5" ng-disabled="isAuto()" />
+                        <datalist id="tempList5">
+                            <option>70</option>
+                            <option>75</option>
+                            <option>80</option>
+                            <option>85</option>
+                            <option>90</option>
+                            <option>95</option>
+                            <option>100</option>
+                        </datalist>
+                    </div>
+                </div>
+                <div class="row time">
+                    <div class="span12">
+                        時間:
+                    </div>
+                    <div class="span3 minute">
+                        <label for="newItemMinuteRange5">分鐘:</label>
+                        <span id="minuteDisplay5"><b>3</b></span>
+                        <input type="range" id="newItemMinuteRange5" ng-model="vm.newItemMinute5" min="0" max="5" step="1"  onchange='updateDisplay(this.value,"minuteDisplay5")'
+                               list="minuteList5" ng-disabled="isAuto()" />
+                        <datalist id="minuteList5">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                        </datalist>
+                    </div>
+                    <div class="span9 second">
+                        <label for="newItemSecondRange5">秒:</label>
+                        <span id="secondDisplay5"><b>0</b></span>
+                        <input type="range" id="newItemSecondRange5" ng-model="vm.newItemSecond5" min="0" max="59" step="1"  onchange='updateDisplay(this.value,"secondDisplay5")'
+                               list="secondList5" ng-disabled="isAuto()" />
+                        <datalist id="secondList5">
+                            <option>0</option>
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                            <option>40</option>
+                            <option>50</option>
+                            <option>59</option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <H4><b>第六泡好茶</b></H4>
+                <div class="row temp">
+                    <div class="span12">
+                    <label for="newItemTempRange6">溫度(°C):</label>
+                        <span id="tempDisplay6"><b>100</b></span>
+                        <input type="range" id="newItemTempRange6" ng-model="vm.newItemTemperature6" min="70" max="100" step="1"  onchange='updateDisplay(this.value,"tempDisplay6")'
+                               list="tempList6" ng-disabled="isAuto()" />
+                        <datalist id="tempList6">
+                            <option>70</option>
+                            <option>75</option>
+                            <option>80</option>
+                            <option>85</option>
+                            <option>90</option>
+                            <option>95</option>
+                            <option>100</option>
+                        </datalist>
+                        </div>
+                </div>
+                <div class="row time">
+                    <div class="span12">
+                        時間:
+                    </div>
+                    <div class="span3 minute">
+                        <label for="newItemMinuteRange6">分鐘:</label>
+                        <span id="minuteDisplay6"><b>3</b></span>
+                        <input type="range" id="newItemMinuteRange6" ng-model="vm.newItemMinute6" min="0" max="5" step="1"  onchange='updateDisplay(this.value,"minuteDisplay6")'
+                               list="minuteList6" ng-disabled="isAuto()" />
+                        <datalist id="minuteList6">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                        </datalist>
+                    </div>
+                    <div class="span9 second">
+                        <label for="newItemSecondRange6">秒:</label>
+                        <span id="secondDisplay6"><b>0</b></span>
+                        <input type="range" id="newItemSecondRange6" ng-model="vm.newItemSecond6" min="0" max="59" step="1"  onchange='updateDisplay(this.value,"secondDisplay6")'
+                               list="secondList6" ng-disabled="isAuto()" />
+                        <datalist id="secondList6">
+                            <option>0</option>
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                            <option>40</option>
+                            <option>50</option>
+                            <option>59</option>
+                        </datalist>
+                    </div>
+                </div>
+                <!--
+                                 Hide Button First in the first version
+                                 Add into later version for looking up recent EAN code recode
+                             -->
+                <!--button type="submit" class="btn btn-primary"
+                        ng-click="vm.addItem()"
+                        ng-disabled = " !vm.newItemTemperature1 && !vm.newItemMinute1 && !vm.newItemSecond1 &&
+                                                           !vm.newItemTemperature2 && !vm.newItemMinute2 && !vm.newItemSecond2 &&
+                                                           !vm.newItemTemperature3 && !vm.newItemMinute3 && !vm.newItemSecond3 &&
+                                                           !vm.newItemTemperature4 && !vm.newItemMinute4 && !vm.newItemSecond4 &&
+                                                           !vm.newItemTemperature5 && !vm.newItemMinute5 && !vm.newItemSecond5 &&
+                                                           !vm.newItemTemperature6 && !vm.newItemMinute6 && !vm.newItemSecond6 ">Add
+                </button-->
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="span12" id="params">
+            <input type="hidden" id="symtext" value="" />
+            <input type="hidden" id="symbol" value="code39">
+            <input id="symaltx" type="hidden">
+            <input id="symopts" type="hidden">
+            Barcode Size: <input type="number" min="1" max="5" id="scaleX" value="2" onchange="updateScaleY()" style="height:30px">
+            <input type="hidden" id="scaleY" value="2">
+            <input type="hidden" name="rot" value="N" id="rotN" checked>
+            <input type="hidden" name="rot" value="R" id="rotR">
+            <input type="hidden" name="rot" value="L" id="rotL">
+            <input type="hidden" name="rot" value="I" id="rotI">
+            <input type="hidden" name="font" value="A" id="fontAnti" checked>
+            <input type="hidden" name="font" value="M" id="fontMono">
+            <button id="render" class="btn btn-primary" onclick="render()">Get Barcode</button>
+            <a class="saveas" href="javascript:saveCanvas('image/png','.png')">Save As PNG</a>
+            &nbsp;&nbsp;
+            <a class="saveas" href="javascript:saveCanvas('image/jpeg','.jpg')">Save As JPEG</a>
+            &nbsp;&nbsp;
+        </div>
+        <div class="span12" id="content">
+            <canvas id="canvas" width=1 height=1 style="border:1px solid #fff;visibility:hidden"></canvas>
+            <div id="proof" style="position:relative;border:1px solid #fff"></div>
+            <div id="output" style="white-space:pre"></div>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Existing HTML -->
+    <!--div class="container">
+        <div class="row">
+            <div ng-repeat="item in vm.list track by item._id" style="padding:10px">
+                <button class="btn btn-danger" ng-click="vm.removeItem(item)">x</button>
+                <table>
+                <tr><th>Barcode</th><th><b>{{item.barcode}}</b></th>></tr>
+                <tr><th>溫度</th><th>分</th><th>秒</th></tr>
+                <tr><td>{{item.temperature1}}</td><td>{{item.minute1}}</td><td>{{item.second1}}</td>></tr>
+                <tr><td>{{item.temperature2}}</td><td>{{item.minute2}}</td><td>{{item.second2}}</td>></tr>
+                <tr><td>{{item.temperature3}}</td><td>{{item.minute3}}</td><td>{{item.second3}}</td>></tr>
+                <tr><td>{{item.temperature4}}</td><td>{{item.minute4}}</td><td>{{item.second4}}</td>></tr>
+                <tr><td>{{item.temperature5}}</td><td>{{item.minute5}}</td><td>{{item.second5}}</td>></tr>
+                <tr><td>{{item.temperature6}}</td><td>{{item.minute6}}</td><td>{{item.second6}}</td>></tr>
+                </table>
+            </div>
+        </div-->
+</body>
+</html>
